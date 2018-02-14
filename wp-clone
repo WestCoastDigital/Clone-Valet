@@ -1,0 +1,42 @@
+# replace all instances of /Valet/ to your local website directory
+
+#!/usr/bin/env /bin/bash
+
+# change current directory to your valet site directory
+cd ~/Valet/
+
+# create destinaton directory
+mkdir $2
+
+# copy files from source to destination
+cp -a $1/. $2
+
+# export source db
+cd $1
+wp db export $1.sql
+
+# navigate to destination
+cd ~/Valet/$2
+
+# change db name to wp_<destination site name> in wp-config.php 
+search=wp_$1
+replace=wp_$2
+sed -i '' "s/${search}/${replace}/g" wp-config.php
+
+# create db from values in wp-config.php
+wp db create
+
+# import source db
+wp db import ~/Valet/$1/$1.sql
+
+# delete source db export file
+rm ~/Valet/$1/$1.sql
+
+# find and replace URLs
+wp search-replace //$1.dev //$2.dev
+
+# secure the site
+valet secure $2
+
+# launch the site in default browser
+valet open $2
